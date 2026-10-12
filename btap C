@@ -1,0 +1,296 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX 100
+#define EMPTY 0
+
+// Định nghĩa cấu trúc 1 nút trong cây nhị phân dạng mảng
+typedef struct {
+    int id;                 // Mã nút
+    char content[120];      // Nội dung: câu hỏi hoặc kết luận
+    int left;               // Chỉ số mảng của nút con trái
+    int right;              // Chỉ số mảng của nút con phải
+    int isLeaf;             // 1: Nút lá (kết luận), 0: Nút quyết định (câu hỏi)
+} Node;
+
+// Cây được tổ chức dưới dạng mảng tĩnh, không dùng con trỏ động
+Node Tree[MAX];
+int root = 1;
+int n = 0; // Số lượng nút hiện có trong cây
+
+// 1. Khởi tạo cây mẫu 7 nút theo tài liệu
+void loadSampleTree() {
+    n = 7;
+    root = 1;
+
+    // Reset dữ liệu mảng
+    for (int i = 0; i < MAX; i++) {
+        Tree[i].id = 0;
+        Tree[i].content[0] = '\0';
+        Tree[i].left = EMPTY;
+        Tree[i].right = EMPTY;
+        Tree[i].isLeaf = 0;
+    }
+
+    Tree[1] = (Node){1, "DTB < 2.0?", 2, 3, 0};
+    Tree[2] = (Node){2, "No >= 12 tin chi?", 4, 5, 0};
+    Tree[3] = (Node){3, "DTB >= 3.2?", 6, 7, 0};
+    Tree[4] = (Node){4, "Canh bao hoc vu muc 2", EMPTY, EMPTY, 1};
+    Tree[5] = (Node){5, "Canh bao hoc vu muc 1", EMPTY, EMPTY, 1};
+    Tree[6] = (Node){6, "De xuat khen thuong", EMPTY, EMPTY, 1};
+    Tree[7] = (Node){7, "Theo doi binh thuong", EMPTY, EMPTY, 1};
+
+    printf("\n>>> Da nap thanh cong cay quyet dinh mau (7 nut)!\n");
+}
+
+// 2. Nhập dữ liệu thủ công từ bàn phím
+void inputManualTree() {
+    printf("\nNhap so luong nut muon khoi tao (1 <= n < %d): ", MAX);
+    if (scanf("%d", &n) != 1 || n <= 0 || n >= MAX) {
+        printf("So luong khong hop le!\n");
+        while (getchar() != '\n');
+        return;
+    }
+
+    root = 1;
+    for (int i = 1; i <= n; i++) {
+        Tree[i].id = i;
+        printf("\n--- Nhap thong tin cho nut [Index %d] ---\n", i);
+        printf("Loai nut (0: Cau hoi quyet dinh, 1: Ket luan/Nut la): ");
+        scanf("%d", &Tree[i].isLeaf);
+        while (getchar() != '\n'); // Xoa bo dem ban phim
+
+        printf("Noi dung cau hoi/ket luan: ");
+        fgets(Tree[i].content, sizeof(Tree[i].content), stdin);
+        Tree[i].content[strcspn(Tree[i].content, "\n")] = '\0'; // Bo ky tu xuong dong
+
+        if (Tree[i].isLeaf == 1) {
+            Tree[i].left = EMPTY;
+            Tree[i].right = EMPTY;
+        } else {
+            printf("Chi so con trai (left, 0 neu khong co): ");
+            scanf("%d", &Tree[i].left);
+            printf("Chi so con phai (right, 0 neu khong co): ");
+            scanf("%d", &Tree[i].right);
+        }
+    }
+    printf("\n>>> Nhap du lieu hoan tat!\n");
+}
+
+// 3. Hiển thị bảng mảng biểu diễn cây
+void displayTreeArray() {
+    if (n == 0) {
+        printf("\nCay chua co du lieu. Vui long nap cay mau hoac nhap du lieu truoc!\n");
+        return;
+    }
+
+    printf("\n================ BANG BIEU DIEN CAY DANG MANG ================\n");
+    printf("%-7s | %-12s | %-30s | %-6s | %-6s\n", "Index", "Loai nut", "Noi dung", "Left", "Right");
+    printf("--------------------------------------------------------------\n");
+    for (int i = 1; i <= n; i++) {
+        printf("%-7d | %-12s | %-30s | %-6d | %-6d\n",
+               i,
+               Tree[i].isLeaf ? "Ket luan" : "Cau hoi",
+               Tree[i].content,
+               Tree[i].left,
+               Tree[i].right);
+    }
+    printf("==============================================================\n");
+    printf("Nut goc (root): %d | Tong so nut: %d\n", root, n);
+}
+
+// 4. Các thuật toán duyệt cây
+void preorder(int i) {
+    if (i == EMPTY) return;
+    printf("[%d: %s] -> ", Tree[i].id, Tree[i].content);
+    preorder(Tree[i].left);
+    preorder(Tree[i].right);
+}
+
+void inorder(int i) {
+    if (i == EMPTY) return;
+    inorder(Tree[i].left);
+    printf("[%d: %s] -> ", Tree[i].id, Tree[i].content);
+    inorder(Tree[i].right);
+}
+
+void postorder(int i) {
+    if (i == EMPTY) return;
+    postorder(Tree[i].left);
+    postorder(Tree[i].right);
+    printf("[%d: %s] -> ", Tree[i].id, Tree[i].content);
+}
+
+void traverseMenu() {
+    if (n == 0) {
+        printf("\nCay chua co du lieu!\n");
+        return;
+    }
+    printf("\n--- DUYET TIEN TU (Preorder: Goc -> Trai -> Phai) ---\n");
+    preorder(root);
+    printf("NULL\n");
+
+    printf("\n--- DUYET TRUNG TU (Inorder: Trai -> Goc -> Phai) ---\n");
+    inorder(root);
+    printf("NULL\n");
+
+    printf("\n--- DUYET HAU TU (Postorder: Trai -> Phai -> Goc) ---\n");
+    postorder(root);
+    printf("NULL\n");
+}
+
+// 5. Tìm kiếm và in đường đi từ gốc đến nút mục tiêu (dùng quay lui)
+int findPath(int current, int targetId, int path[], int *len) {
+    if (current == EMPTY) return 0;
+
+    path[(*len)++] = current; // Ghi nhận nút vào đường đi
+
+    if (Tree[current].id == targetId) return 1;
+
+    if (findPath(Tree[current].left, targetId, path, len)) return 1;
+    if (findPath(Tree[current].right, targetId, path, len)) return 1;
+
+    (*len)--; // Quay lui neu ca 2 nhanh con deu khong chua nut
+    return 0;
+}
+
+void searchAndPrintPath() {
+    if (n == 0) {
+        printf("\nCay chua co du lieu!\n");
+        return;
+    }
+
+    int targetId;
+    printf("\nNhap ID nut can tim: ");
+    if (scanf("%d", &targetId) != 1) {
+        while (getchar() != '\n');
+        return;
+    }
+
+    int path[MAX];
+    int len = 0;
+    if (findPath(root, targetId, path, &len)) {
+        printf("=> Tim thay nut %d! Duong di tu goc (root = %d):\n", targetId, root);
+        for (int i = 0; i < len; i++) {
+            int idx = path[i];
+            printf("%d (%s)", Tree[idx].id, Tree[idx].content);
+            if (i < len - 1) printf("  -->  ");
+        }
+        printf("\n");
+    } else {
+        printf("=> Khong tim thay nut co ID = %d trong cay!\n", targetId);
+    }
+}
+
+// 6. Tính chiều cao cây và đếm số nút lá
+int height(int i) {
+    if (i == EMPTY) return 0;
+    int hLeft = height(Tree[i].left);
+    int hRight = height(Tree[i].right);
+    return 1 + (hLeft > hRight ? hLeft : hRight);
+}
+
+int countLeaves(int i) {
+    if (i == EMPTY) return 0;
+    if (Tree[i].left == EMPTY && Tree[i].right == EMPTY) return 1;
+    return countLeaves(Tree[i].left) + countLeaves(Tree[i].right);
+}
+
+void statistics() {
+    if (n == 0) {
+        printf("\nCay chua co du lieu!\n");
+        return;
+    }
+    printf("\n--- THONG KE TREN CAY ---\n");
+    printf("- Chieu cao cua cay (tinh theo so muc): %d\n", height(root));
+    printf("- So luong nut la (nut ket luan): %d\n", countLeaves(root));
+}
+
+// 7. Mô phỏng tư vấn học vụ theo tương tác người dùng
+void runDecisionTree() {
+    if (n == 0) {
+        printf("\nCay chua co du lieu!\n");
+        return;
+    }
+
+    int current = root;
+    char answer;
+    printf("\n===== MO PHONG TU VAN HOC VU (y: Co, n: Khong) =====\n");
+
+    while (current != EMPTY && Tree[current].isLeaf == 0) {
+        printf("%s (y/n): ", Tree[current].content);
+        scanf(" %c", &answer);
+
+        if (answer == 'y' || answer == 'Y') {
+            current = Tree[current].left;
+        } else if (answer == 'n' || answer == 'N') {
+            current = Tree[current].right;
+        } else {
+            printf("[!] Lua chon khong hop le, vui long chi nhap 'y' hoac 'n'.\n");
+        }
+    }
+
+    if (current != EMPTY) {
+        printf("\n>>> KET LUAN HOC VU: [ %s ] <<<\n", Tree[current].content);
+    } else {
+        printf("\nDu lieu cay bi loi hoac nhanh re khong ton tai!\n");
+    }
+}
+
+// Hàm menu điều khiển chính
+int main() {
+    int choice;
+    do {
+        printf("\n================ TREE ARRAY PRACTICE ================\n");
+        printf("1. Khoi tao cay mau (7 nut)\n");
+        printf("2. Nhap du lieu cay thu cong\n");
+        printf("3. Hien thi bang mang bieu dien cay\n");
+        printf("4. Duyet cay (Tien tu, Trung tu, Hau tu)\n");
+        printf("5. Tim nut va in duong di tu goc\n");
+        printf("6. Tinh chieu cao va dem so nut la\n");
+        printf("7. Mo phong tu van hoc vu\n");
+        printf("0. Thoat chuong trinh\n");
+        printf("-----------------------------------------------------\n");
+        printf("Lua chon cua ban: ");
+
+        if (scanf("%d", &choice) != 1) {
+            printf("Nhap sai! Vui long nhap so.\n");
+            while (getchar() != '\n');
+            choice = -1;
+            continue;
+        }
+
+        switch (choice) {
+            case 1:
+                loadSampleTree();
+                break;
+            case 2:
+                inputManualTree();
+                break;
+            case 3:
+                displayTreeArray();
+                break;
+            case 4:
+                traverseMenu();
+                break;
+            case 5:
+                searchAndPrintPath();
+                break;
+            case 6:
+                statistics();
+                break;
+            case 7:
+                runDecisionTree();
+                break;
+            case 0:
+                printf("\nKet thuc chuong trinh. Tam biet!\n");
+                break;
+            default:
+                printf("\nLua chon khong hop le! Vui long chon tu 0 den 7.\n");
+                break;
+        }
+    } while (choice != 0);
+
+    return 0;
+}
