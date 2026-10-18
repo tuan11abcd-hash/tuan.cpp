@@ -1,0 +1,223 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "student.h"
+#include "sorts.h"
+
+#define MAX 100
+
+Student allStudents[MAX];
+Student validStudents[MAX];
+Student eligibleStudents[MAX];
+
+int total = 0;
+int validCount = 0;
+int eligibleCount = 0;
+
+void loadCSV(char filename[])
+{
+    FILE *fp = fopen(filename,"r");
+
+    if(fp == NULL)
+    {
+        printf("Khong mo duoc file!\n");
+        return;
+    }
+
+    char line[256];
+
+    while(fgets(line,sizeof(line),fp))
+    {
+        Student s;
+
+        if(sscanf(line,
+                  "%[^,],%[^,],%f,%d,%d",
+                  s.id,
+                  s.name,
+                  &s.gpa,
+                  &s.credits,
+                  &s.discipline) != 5)
+        {
+            continue;
+        }
+
+        s.inputIndex = total;
+
+        allStudents[total++] = s;
+    }
+
+    fclose(fp);
+}
+
+void processData()
+{
+    for(int i=0;i<total;i++)
+    {
+        if(isValidStudent(allStudents[i]))
+        {
+            validStudents[validCount++] =
+                allStudents[i];
+
+            if(isEligible(allStudents[i]))
+            {
+                eligibleStudents[eligibleCount++] =
+                    allStudents[i];
+            }
+        }
+    }
+}
+
+void saveValidCSV()
+{
+    FILE *fp = fopen("valid.csv","w");
+
+    for(int i=0;i<validCount;i++)
+    {
+        fprintf(fp,
+                "%s,%s,%.2f,%d,%d\n",
+                validStudents[i].id,
+                validStudents[i].name,
+                validStudents[i].gpa,
+                validStudents[i].credits,
+                validStudents[i].discipline);
+    }
+
+    fclose(fp);
+}
+
+void saveRejectedCSV()
+{
+    FILE *fp = fopen("rejected.csv","w");
+
+    for(int i=0;i<validCount;i++)
+    {
+        if(!isEligible(validStudents[i]))
+        {
+            fprintf(fp,
+                    "%s,%s\n",
+                    validStudents[i].id,
+                    validStudents[i].name);
+        }
+    }
+
+    fclose(fp);
+}
+
+void saveRankedCSV()
+{
+    FILE *fp = fopen("ranked.csv","w");
+
+    for(int i=0;i<eligibleCount;i++)
+    {
+        fprintf(fp,
+                "%d,%s,%s,%.2f,%d\n",
+                i+1,
+                eligibleStudents[i].id,
+                eligibleStudents[i].name,
+                eligibleStudents[i].gpa,
+                eligibleStudents[i].credits);
+    }
+
+    fclose(fp);
+}
+
+void saveSummary()
+{
+    FILE *fp = fopen("summary.txt","w");
+
+    fprintf(fp,"Tong ho so: %d\n", total);
+    fprintf(fp,"Hop le: %d\n", validCount);
+    fprintf(fp,"Du dieu kien: %d\n", eligibleCount);
+    fprintf(fp,"Khong du dieu kien: %d\n",
+            validCount - eligibleCount);
+
+    fclose(fp);
+}
+
+void displayRanking()
+{
+    printf("\n===== RANKING =====\n");
+
+    for(int i=0;i<eligibleCount;i++)
+    {
+        printf("%d. %s - %s - GPA %.2f\n",
+               i+1,
+               eligibleStudents[i].id,
+               eligibleStudents[i].name,
+               eligibleStudents[i].gpa);
+    }
+}
+
+void topK()
+{
+    int k;
+
+    printf("Nhap K: ");
+    scanf("%d",&k);
+
+    if(k > eligibleCount)
+        k = eligibleCount;
+
+    for(int i=0;i<k;i++)
+    {
+        printf("%d. %s\n",
+               i+1,
+               eligibleStudents[i].id);
+    }
+}
+
+int main()
+{
+    loadCSV("students.csv");
+
+    processData();
+
+    int choice;
+
+    do
+    {
+        printf("\n===== MENU =====\n");
+        printf("1. Bubble Sort\n");
+        printf("2. Selection Sort\n");
+        printf("3. Insertion Sort\n");
+        printf("4. Top K\n");
+        printf("0. Exit\n");
+
+        printf("Choice: ");
+        scanf("%d",&choice);
+
+        switch(choice)
+        {
+            case 1:
+                bubbleSort(eligibleStudents,
+                           eligibleCount);
+                displayRanking();
+                break;
+
+            case 2:
+                selectionSort(eligibleStudents,
+                              eligibleCount);
+                displayRanking();
+                break;
+
+            case 3:
+                insertionSort(eligibleStudents,
+                              eligibleCount);
+                displayRanking();
+                break;
+
+            case 4:
+                topK();
+                break;
+        }
+
+    }while(choice != 0);
+
+    saveValidCSV();
+    saveRejectedCSV();
+    saveRankedCSV();
+    saveSummary();
+
+    return 0;
+}
